@@ -2,34 +2,20 @@
 import Layout from '../layouts/Layout.astro';
 import { getBlogs } from '../lib/microcms';
 
-interface BlogContent {
-  id: string;
-  title: string;
-}
-
-let response;
-try {
-  response = await getBlogs();
-} catch (e) {
-  console.error("データ取得エラー:", e);
-  response = { contents: [] };
-}
+// データの取得（エンドポイント photos はそのまま活かします）
+const response = await getBlogs();
 ---
 
 <Layout title="My Photo Blog">
 	<main>
 		<h1>My Photo Blog</h1>
-		<audio id="bgm-player" src="/bgm.mp3" loop></audio>
-
 		<ul class="post-list">
 			{
-				response.contents && response.contents.map((content: BlogContent) => (
+				response.contents.map((content: any) => (
 					<li class="post-item">
-						<span class="post-title">{content.title}</span>
-						<div class="button-group">
-							<a href={`/posts/${content.id}`} class="btn standard">通常表示</a>
-							<button class="btn with-bgm" data-id={content.id}>🎵 BGM付き</button>
-						</div>
+						<a href={`/posts/${content.id}`} class="post-link">
+							{content.title}
+						</a>
 					</li>
 				))
 			}
@@ -37,32 +23,35 @@ try {
 	</main>
 </Layout>
 
-<script>
-	const bgm = document.getElementById('bgm-player') as HTMLAudioElement;
-	const bgmButtons = document.querySelectorAll('.with-bgm');
-
-	bgmButtons.forEach(button => {
-		button.addEventListener('click', () => {
-			const postId = button.getAttribute('data-id');
-			if (bgm) {
-				bgm.play().then(() => {
-					setTimeout(() => {
-						window.location.href = `/posts/${postId}`;
-					}, 500);
-				}).catch(() => {
-					window.location.href = `/posts/${postId}`;
-				});
-			}
-		});
-	});
-</script>
-
 <style>
-  /* スタイルはそのまま */
-	main { margin: auto; padding: 1rem; width: 800px; max-width: calc(100% - 2rem); }
-	.post-item { display: flex; justify-content: space-between; align-items: center; padding: 1rem; border-bottom: 1px solid #eee; }
-	.button-group { display: flex; gap: 10px; }
-	.btn { padding: 8px 16px; border-radius: 20px; text-decoration: none; font-size: 14px; cursor: pointer; border: none; }
-	.standard { background-color: #f0f0f0; color: #333; }
-	.with-bgm { background-color: #0070f3; color: white; }
+	main {
+		margin: auto;
+		padding: 1rem;
+		width: 800px;
+		max-width: calc(100% - 2rem);
+		color: #333;
+	}
+	h1 {
+		font-size: 2.5rem;
+		font-weight: 700;
+		text-align: center;
+		margin-bottom: 2em;
+	}
+	.post-list {
+		list-style: none;
+		padding: 0;
+	}
+	.post-item {
+		padding: 1rem;
+		border-bottom: 1px solid #eee;
+	}
+	.post-link {
+		color: #0070f3;
+		text-decoration: none;
+		font-weight: bold;
+		font-size: 1.2rem;
+	}
+	.post-link:hover {
+		text-decoration: underline;
+	}
 </style>
