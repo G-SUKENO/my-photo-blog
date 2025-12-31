@@ -1,21 +1,19 @@
 import { createClient } from "microcms-js-sdk";
 
-if (!import.meta.env.MICROCMS_SERVICE_DOMAIN || !import.meta.env.MICROCMS_API_KEY) {
-  console.warn("microCMSの環境変数が設定されていません。");
-}
-
 export const client = createClient({
   serviceDomain: import.meta.env.MICROCMS_SERVICE_DOMAIN || '',
   apiKey: import.meta.env.MICROCMS_API_KEY || '',
 });
 
+// endpoint を "photos" に修正
 export const getBlogs = async (queries?: any) => {
-  return await client.get({ endpoint: "blogs", queries });
+  return await client.get({ endpoint: "photos", queries });
 };
 
+// ここも "photos" に修正
 export const getBlogDetail = async (contentId: string, queries?: any) => {
   return await client.get({
-    endpoint: "blogs",
+    endpoint: "photos",
     contentId,
     queries,
   });
