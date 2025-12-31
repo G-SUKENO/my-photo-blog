@@ -1,133 +1,115 @@
 ---
-import { createClient } from 'microcms-js-sdk';
+import Layout from '../layouts/Layout.astro';
+// パスが通らない場合は、直接ライブラリからではなくプロジェクトの構造に合わせます
+import { getBlogs } from '../lib/microcms';
 
-const client = createClient({
-  serviceDomain: '6t86gj78ob',
-  apiKey: 'dCCdFLQew5T6YsttpgtRFfNO2S4A488jecvZ',
-});
+// contentの型を定義して「any」エラーを防ぎます
+interface BlogContent {
+  id: string;
+  title: string;
+}
 
-const res = await client.get({ 
-  endpoint: 'photos',
-  queries: { orders: '-date' } // 日付の新しい順に並べる
-});
-const posts = res.contents;
-
-// 日付フォーマット用の関数
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString);
-  return date.getFullYear() + '.' + (date.getMonth() + 1).toString().padStart(2, '0') + '.' + date.getDate().toString().padStart(2, '0');
-};
+const response = await getBlogs({ fields: ["id", "title"] });
 ---
 
-<html lang="ja">
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>My Photo Blog</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Sawarabi+Mincho&display=swap');
-        
-        body { 
-            background: #fafafa; 
-            font-family: "Sawarabi Mincho", serif; 
-            margin: 0; 
-            color: #333;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-        }
+<Layout title="My Photo Blog">
+	<main>
+		<h1>My Photo Blog</h1>
+		
+		<audio id="bgm-player" src="/bgm.mp3" loop></audio>
 
-        header { 
-            padding: 120px 0 80px; 
-            text-align: center; 
-        }
+		<ul class="post-list">
+			{
+				response.contents.map((content: BlogContent) => (
+					<li class="post-item">
+						<span class="post-title">{content.title}</span>
+						<div class="button-group">
+							<a href={`/posts/${content.id}`} class="btn standard">通常表示</a>
+							<button class="btn with-bgm" data-id={content.id}>🎵 BGM付き</button>
+						</div>
+					</li>
+				))
+			}
+		</ul>
+	</main>
+</Layout>
 
-        h1 { 
-            font-weight: normal; 
-            letter-spacing: 0.5em; 
-            font-size: 1.2rem; 
-            color: #999;
-            text-indent: 0.5em; /* 均等な中央寄せのため */
-        }
+<script>
+	const bgm = document.getElementById('bgm-player') as HTMLAudioElement;
+	const bgmButtons = document.querySelectorAll('.with-bgm');
 
-        main { 
-            max-width: 600px; 
-            width: 90%;
-            margin-bottom: 100px;
-        }
+	bgmButtons.forEach(button => {
+		button.addEventListener('click', () => {
+			const postId = button.getAttribute('data-id');
+			
+			if (bgm) {
+				bgm.play().then(() => {
+					setTimeout(() => {
+						window.location.href = `/posts/${postId}`;
+					}, 500);
+				}).catch(error => {
+					console.error("再生エラー:", error);
+					window.location.href = `/posts/${postId}`;
+				});
+			}
+		});
+	});
+</script>
 
-        .post-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .post-item {
-            margin-bottom: 60px;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 40px;
-            transition: opacity 0.4s ease;
-        }
-
-        .post-item:hover {
-            opacity: 0.5;
-        }
-
-        .post-link {
-            text-decoration: none;
-            color: inherit;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .post-date {
-            font-size: 0.75rem;
-            letter-spacing: 0.2em;
-            color: #aaa;
-            font-family: sans-serif;
-        }
-
-        .post-title {
-            font-size: 1.2rem;
-            letter-spacing: 0.15em;
-            line-height: 1.8;
-        }
-
-        footer {
-            margin-top: auto;
-            padding: 40px;
-            font-size: 0.65rem;
-            color: #ccc;
-            letter-spacing: 0.1em;
-        }
-
-        @media (max-width: 768px) {
-            header { padding: 80px 0 50px; }
-            .post-title { font-size: 1.1rem; }
-            .post-item { margin-bottom: 40px; padding-bottom: 30px; }
-        }
-    </style>
-</head>
-<body>
-    <header>
-        <h1>伝えたい写真</h1>
-    </header>
-
-    <main>
-        <ul class="post-list">
-            {posts.map((post: any) => (
-                <li class="post-item">
-                    <a href={`/posts/${post.id}`} class="post-link">
-                        <span class="post-date">{formatDate(post.date)}</span>
-                        <span class="post-title">{post.title}</span>
-                    </a>
-                </li>
-            ))}
-        </ul>
-    </main>
-
-    <footer>&copy; 2025 My Photo Blog</footer>
-</body>
-</html>
+<style>
+	/* スタイルは先ほどと同じ */
+	main {
+		margin: auto;
+		padding: 1rem;
+		width: 800px;
+		max-width: calc(100% - 2rem);
+		color: #333;
+		font-size: 20px;
+		line-height: 1.6;
+	}
+	h1 {
+		font-size: 2.5rem;
+		font-weight: 700;
+		text-align: center;
+		margin-bottom: 2em;
+	}
+	.post-list {
+		list-style: none;
+		padding: 0;
+	}
+	.post-item {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 1rem;
+		border-bottom: 1px solid #eee;
+	}
+	.post-title {
+		font-weight: bold;
+	}
+	.button-group {
+		display: flex;
+		gap: 10px;
+	}
+	.btn {
+		padding: 8px 16px;
+		border-radius: 20px;
+		text-decoration: none;
+		font-size: 14px;
+		cursor: pointer;
+		transition: 0.3s;
+		border: none;
+	}
+	.standard {
+		background-color: #f0f0f0;
+		color: #333;
+	}
+	.with-bgm {
+		background-color: #0070f3;
+		color: white;
+	}
+	.btn:hover {
+		opacity: 0.8;
+		transform: translateY(-2px);
+	}
+</style>
